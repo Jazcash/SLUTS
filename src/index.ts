@@ -43,6 +43,7 @@ export class SpringLobbyProtocolClient {
     protected requestComposers: { [key in keyof SpringLobbyProtocol["Request"]]?: (request: MessageModel) => string } = {};
     protected responseParsers: { [key in keyof SpringLobbyProtocol["Response"]]?: (response: string) => any } = {};
     protected keepAliveInterval?: NodeJS.Timeout;
+    protected responseBuffer: string = "";
 
     constructor(config: SpringLobbyProtocolClientConfig = { verbose: false }) {
         this.config = config;
@@ -91,32 +92,6 @@ export class SpringLobbyProtocolClient {
         });
     }
 
-    public async login(username: string, password: string, clientName = "SLP Client") : Promise<{ success: boolean, error?: string }> {
-        const localIp = await (await dns.promises.lookup(os.hostname())).address ?? "*";
-
-        return new Promise(resolve => {
-            const acceptedBinding = this.onResponse("ACCEPTED").add(() => {
-                acceptedBinding.destroy();
-                deniedBinding.destroy();
-                resolve({ success: true });
-            });
-
-            const deniedBinding = this.onResponse("DENIED").add((data) => {
-                acceptedBinding.destroy();
-                deniedBinding.destroy();
-                resolve({ success: false, error: data.reason });
-            });
-
-            this.request("LOGIN", {
-                userName: username,
-                password: crypto.createHash("md5").update(password).digest("base64"),
-                cpu: 0,
-                localIP: localIp,
-                lobbyNameAndVersion: clientName
-            });
-        });
-    }
-
     public disconnect(reason: string = "Intentionally disconnected") : Promise<void> {
         return new Promise(resolve => {
             this.request("EXIT", { reason: reason });
@@ -153,8 +128,57 @@ export class SpringLobbyProtocolClient {
         return this.responseSignals.get(responseId) as Signal<Data>;
     }
 
-    protected responseReceived(data: string) {
-        const responseMessages = data.split("\n").filter(Boolean);
+    public async login(username: string, password: string, clientName = "SLP Client") : Promise<{ success: boolean, error?: string }> {
+        const localIp = await (await dns.promises.lookup(os.hostname())).address ?? "*";
+
+        return new Promise(resolve => {
+            const acceptedBinding = this.onResponse("ACCEPTED").add(() => {
+                acceptedBinding.destroy();
+                deniedBinding.destroy();
+                resolve({ success: true });
+            });
+
+            const deniedBinding = this.onResponse("DENIED").add((data) => {
+                acceptedBinding.destroy();
+                deniedBinding.destroy();
+                resolve({ success: false, error: data.reason });
+            });
+
+            this.request("LOGIN", {
+                userName: username,
+                password: crypto.createHash("md5").update(password).digest("base64"),
+                cpu: 0,
+                localIP: localIp,
+                lobbyNameAndVersion: clientName
+            });
+        });
+    }
+
+    public async say(userName: string, message: string) : Promise<void> {
+        return new Promise(resolve => {
+            const binding = this.onResponse("SAYPRIVATE").add((data) => {
+                if (data.userName === data.userName && data.message === message) {
+                    binding.destroy();
+                    resolve();
+                }
+            });
+    
+            this.request("SAYPRIVATE", { userName, message });
+        });
+    }
+
+    protected responseReceived(responseStr: string) {
+        const fullResponseStr = JSON.stringify(responseStr);
+        const responseFinished = fullResponseStr.slice(fullResponseStr.length - 3, fullResponseStr.length - 1) === "\\n";
+        if (!responseFinished) {
+            this.responseBuffer += responseStr;
+            return;
+        } else {
+            this.responseBuffer += responseStr;
+        }
+
+        const responseMessages = this.responseBuffer.split("\n").filter(Boolean);
+        this.responseBuffer = "";
         for (const responseMessage of responseMessages) {
             if (this.config.verbose) {
                 console.log(`Response: ${responseMessage}`);

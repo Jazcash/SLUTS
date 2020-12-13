@@ -602,7 +602,7 @@ export interface SpringLobbyProtocol {
         }
         /** Sends a private message on to its intended recipient. */
         SAIDPRIVATE: {
-            username: string;
+            userName: string;
             message: string;
         }
         /** Sent to a client that just sent a SAYPRIVATE command. This notifies the client that the server sent the private message on to its intended recipient. */
