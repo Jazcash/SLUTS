@@ -3,6 +3,8 @@ Spring Lobby User in TypeScript
 
 ## Usage
 
+`npm i --save sluts`
+
 ```
 import { SpringLobbyProtocolClient } from "sluts";
 
