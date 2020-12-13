@@ -10,6 +10,7 @@
   "scripts": {
     "prepublish": "tsc",
     "build": "tsc",
+    "dev": "tsc --watch",
     "compile-slp-types": "./node_modules/.bin/ts-interface-builder --outDir ./src --suffix -compiled ./src/spring-lobby-protocol.ts"
   },
   "author": "Jazcash",

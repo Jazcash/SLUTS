@@ -1,3 +1,5 @@
+// Manually transcribed from https://springrts.com/dl/LobbyProtocol/ProtocolDescription.html
+
 export interface SpringLobbyProtocol {
     Request: {
         /** 
