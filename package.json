@@ -17,6 +17,10 @@
   },
   "author": "Jazcash",
   "license": "unlicense",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jazcash/SLUTS.git"
+  },
   "devDependencies": {
     "@types/eslint": "^7.2.6",
     "@types/node": "^14.14.13",

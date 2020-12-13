@@ -69,7 +69,7 @@ export class SpringLobbyProtocolClient {
                 }
                 this.keepAliveInterval = setInterval(() => {
                     this.request("PING");
-                }, 2800);
+                }, 30000);
 
                 resolve(data);
             });
