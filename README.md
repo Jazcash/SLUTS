@@ -19,6 +19,10 @@ import { SpringLobbyProtocolClient } from "sluts";
         return;
     }
 
-    client.request("SAYPRIVATE", { userName: "[Fx]Jazcash", message: "Hello world!" });
+    client.onResponse("SAIDPRIVATE").add(({username, message}) => {
+        if (message.substr(0, 5) === "!say ") {
+            client.request("SAYPRIVATE", { userName: username, message: message.slice(5) });
+        }
+    });
 })();
 ```
