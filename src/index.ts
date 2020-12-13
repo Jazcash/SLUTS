@@ -162,7 +162,7 @@ export class SpringLobbyProtocolClient {
                     resolve();
                 }
             });
-    
+
             this.request("SAYPRIVATE", { userName, message });
         });
     }
