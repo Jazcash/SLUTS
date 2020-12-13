@@ -11,6 +11,8 @@
     "prepublish": "tsc",
     "build": "tsc",
     "dev": "tsc --watch",
+    "lint": "eslint . --ext .ts",
+    "lint-fix": "eslint . --ext .ts --fix",
     "compile-slp-types": "./node_modules/.bin/ts-interface-builder --outDir ./src --suffix -compiled ./src/spring-lobby-protocol.ts"
   },
   "author": "Jazcash",

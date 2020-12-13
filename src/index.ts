@@ -1,11 +1,12 @@
+import * as crypto from "crypto";
+import * as dns from "dns";
 import * as net from "net";
 import * as os from "os";
-import * as dns from "dns";
-import * as crypto from "crypto";
+import { clearInterval, setInterval } from "timers";
+
 import { Signal } from "./signal";
 import { SpringLobbyProtocol } from "./spring-lobby-protocol";
 import { SpringLobbyProtocol as SpringLobbyProtocolCompiled } from "./spring-lobby-protocol-compiled";
-import { clearInterval, setInterval } from "timers";
 
 type TIface = typeof SpringLobbyProtocolCompiled;
 
@@ -63,7 +64,7 @@ export class SpringLobbyProtocolClient {
             this.socket.on("data", (data) => this.responseReceived(data.toString("utf8")));
 
             const onConnectBinding = this.onResponse("TASSERVER").add(data => {
-                if (this.keepAliveInterval){
+                if (this.keepAliveInterval) {
                     clearInterval(this.keepAliveInterval);
                 }
                 this.keepAliveInterval = setInterval(() => {
@@ -73,9 +74,9 @@ export class SpringLobbyProtocolClient {
                 resolve(data);
             });
 
-            for (const event of ["end", "timeout", "error"]){
+            for (const event of ["end", "timeout", "error"]) {
                 this.socket.on(event, () => {
-                    if (this.keepAliveInterval){
+                    if (this.keepAliveInterval) {
                         clearInterval(this.keepAliveInterval);
                     }
                     onConnectBinding.destroy();
@@ -83,7 +84,7 @@ export class SpringLobbyProtocolClient {
             }
 
             this.socket.connect(port, host, () => {
-                if (this.config.verbose){
+                if (this.config.verbose) {
                     console.log(`Connected to ${host}:${port}`);
                 }
             });
@@ -105,7 +106,7 @@ export class SpringLobbyProtocolClient {
                 deniedBinding.destroy();
                 resolve({ success: false, error: data.reason });
             });
-    
+
             this.request("LOGIN", {
                 userName: username,
                 password: crypto.createHash("md5").update(password).digest("base64"),
@@ -133,7 +134,7 @@ export class SpringLobbyProtocolClient {
         if (requestComposer) {
             const requestString = data.length ? requestComposer(data[0] as MessageModel) : requestId;
 
-            if (this.config.verbose){
+            if (this.config.verbose) {
                 console.log(`Request: ${requestString}`);
             }
 
@@ -148,14 +149,14 @@ export class SpringLobbyProtocolClient {
         if (!this.responseSignals.has(responseId)) {
             this.responseSignals.set(responseId, new Signal<Data>());
         }
-        
+
         return this.responseSignals.get(responseId) as Signal<Data>;
     }
 
     protected responseReceived(data: string) {
         const responseMessages = data.split("\n").filter(Boolean);
         for (const responseMessage of responseMessages) {
-            if (this.config.verbose){
+            if (this.config.verbose) {
                 console.log(`Response: ${responseMessage}`);
             }
 
@@ -174,7 +175,7 @@ export class SpringLobbyProtocolClient {
         const index = response.indexOf(" ");
         const [command, args] = [response.slice(0, index), response.slice(index + 1)];
         const parser = this.responseParsers[command as keyof SpringLobbyProtocol["Response"]];
-        if (parser){
+        if (parser) {
             const obj = parser(args);
             return obj as ResponseType;
         }
@@ -194,7 +195,7 @@ export class SpringLobbyProtocolClient {
             const parts = [];
             const tabParts = response.split("\t");
 
-            if (props.length === 1){
+            if (props.length === 1) {
                 parts.push(tabParts.shift());
             } else {
                 parts.push(...tabParts.shift()!.split(" "));
@@ -207,7 +208,7 @@ export class SpringLobbyProtocolClient {
                 }
             }
 
-            for (let i=0; i<props.length; i++){
+            for (let i=0; i<props.length; i++) {
                 const prop = props[i];
                 const stringValue = parts[i]!;
                 let value: string | number | boolean | string[];
@@ -226,7 +227,7 @@ export class SpringLobbyProtocolClient {
             }
 
             return responseObject;
-        }
+        };
     }
 
     protected splitResponse(response: string, wordCount: number): string[] {
@@ -238,11 +239,11 @@ export class SpringLobbyProtocolClient {
 
     protected generateMessageInterfaces(messageModel: TIface) {
         const messages: SLPMessage[] = [];
-    
+
         for (const messageType of messageModel.props) {
             const propertyTypes = (messageType.ttype as TIface).props;
             const propertyModel: SLPProperty[] = [];
-            for (const propertyType of propertyTypes){
+            for (const propertyType of propertyTypes) {
                 propertyModel.push({
                     name: propertyType.name,
                     type: (propertyType.ttype as any).name ?? "stringArray",
@@ -254,14 +255,14 @@ export class SpringLobbyProtocolClient {
                 properties: propertyModel
             });
         }
-    
+
         return messages;
     }
 
     protected generateRequestComposer(requestModel: SLPMessage) : (request: MessageModel) => string {
         return (request) => {
             let requestString = requestModel.name;
-            for (const prop of requestModel.properties){
+            for (const prop of requestModel.properties) {
                 const value = request[prop.name];
                 let stringValue: string;
                 if (value === undefined) {
@@ -280,6 +281,6 @@ export class SpringLobbyProtocolClient {
             }
 
             return requestString;
-        }
+        };
     }
 }

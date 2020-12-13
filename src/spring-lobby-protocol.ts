@@ -2,9 +2,9 @@
 
 export interface SpringLobbyProtocol {
     Request: {
-        /** 
+        /**
          * Requests a PONG back from the server.
-         * 
+         *
          * Clients should send PING once every 30 seconds, if no other data is being sent to the server. For details, see the notes above on keep-alive signals.
          */
         PING: {
@@ -19,7 +19,7 @@ export interface SpringLobbyProtocol {
         }
         /**
          * The client sends this command when trying to register a new account. Note that the client must not already be logged in, or else the server will deny his request.
-         * 
+         *
          * The username and password are given sanity/uniqueness checks, and these primarily determine the servers response. If email verification is enabled, and no valid email address is provided, the server will deny the registration.
          */
         REGISTER: {
@@ -31,9 +31,9 @@ export interface SpringLobbyProtocol {
         }
         /**
          * Sent by a client asking to log on to the server.
-         * 
+         *
          * Note: if the client has not yet confirmed the user agreement, then server will send the AGREEMENT to the client as a response to this command. In this case the response to LOGIN will be delayed until after CONFIRMAGREEMENT.
-         * 
+         *
          * Also see LOGININFOEND command.
          */
         LOGIN: {
@@ -65,7 +65,7 @@ export interface SpringLobbyProtocol {
         }
         /**
          * Requests a verification code, to be sent to a new email address that the user wishes to associate to their account.
-         * 
+         *
          * Even if email verification is disabled, it is intended that the client will call this before calling CHANGEEMAIL. If email verification is disabled, the response will be a CHANGEEMAILREQUESTDENIED, containing a message informing the user that a blank verification code will be accepted.
          */
         CHANGEEMAILREQUEST: {
@@ -111,9 +111,9 @@ export interface SpringLobbyProtocol {
             chanName: string;
             topic: string;
         }
-        /** 
+        /**
          * Sent by a client when requesting to leave a channel.
-         * 
+         *
          * Note that when the client is disconnected, the client is automatically removed from all channels.
          */
         LEAVE: {
@@ -177,9 +177,9 @@ export interface SpringLobbyProtocol {
             externalId: number;
             message: string;
         }
-        /** 
+        /**
          * Sent by the client requesting to open a new battle. If the command is successful, the client becomes the founder (i.e. host) of the new battle.
-         * 
+         *
          * Clients without botflags will have their maxPlayers capped at 10; the founding client will be informed via a server message if the server applies this limitation.
          */
         OPENBATTLE: {
@@ -219,9 +219,9 @@ export interface SpringLobbyProtocol {
             userName: string;
             reason?: string;
         }
-        /** 
+        /**
          * Sent by the client when he leaves a battle.
-         * 
+         *
          * When this command is by the founder of a battle, it notifies that the battle is now closed.
          */
         LEAVEBATTLE: {
@@ -236,9 +236,9 @@ export interface SpringLobbyProtocol {
             /** Must NOT contain the file extension! */
             mapName: string;
         }
-        /** 
+        /**
          * Sent by a client to inform the server about his changed status.
-         * 
+         *
          * Note: To tell out if a battle is "in-game", a client must check the in-game status of the host.
          */
         MYSTATUS: {
@@ -252,13 +252,13 @@ export interface SpringLobbyProtocol {
              */
             status: string;
         }
-        /** 
+        /**
          * Sent by a client to the server, telling him his battle status changed.
          * */
         MYBATTLESTATUS: {
             /**
              * An integer, but with limited range: 0..2147483647 (use signed int and consider only positive values and zero) This number is sent as text. Each bit has its meaning:
-             * 
+             *
              * - b0 = undefined (reserved for future use)
              * - b1 = ready (0=not ready, 1=ready)
              * - b2..b5 = team no. (from 0 to 15. b2 is LSB, b5 is MSB)
@@ -274,9 +274,9 @@ export interface SpringLobbyProtocol {
             /** Should be a 32-bit signed integer in decimal form (e.g. 255 and not FF) where each color channel should occupy 1 byte (e.g. in hexdecimal: $00BBGGRR, B = blue, G = green, R = red). Example: 255 stands for $000000FF. */
             myTeamColor: number;
         }
-        /** 
+        /**
          * Sent by the founder of the battle when changing a user's handicap value (which is part of that users battle status).
-         * 
+         *
          * Only the founder can change other users handicap values, and that requests from non-founder users will be ignored.
          */
         HANDICAP: {
@@ -354,9 +354,9 @@ export interface SpringLobbyProtocol {
         REMOVESTARTRECT: {
             allyNo: number;
         }
-        /** 
+        /**
          * Sent by a client (battle host), to inform other clients about current battle configuration (start positions type, mod options, map options...). Only the battle host itself needs to write the corresponding script tags into script.txt, other battle clients should merely use them for display purposes. The [pair] format is "key=value can have spaces". Keys may not contain spaces, and are expected to use the '/' character to separate tables, see example:
-         * 
+         *
          * - SETSCRIPTTAGS game/startmetal=1000
          * - SETSCRIPTTAGS game/startenergy=1000
          * - SETSCRIPTTAGS game/maxunits=500
@@ -365,7 +365,7 @@ export interface SpringLobbyProtocol {
          * - SETSCRIPTTAGS game/limitdgun=1
          * - SETSCRIPTTAGS game/diminishingmms=0
          * - SETSCRIPTTAGS game/ghostedbuildings=1
-         * 
+         *
          * Though in reality, all tags are joined together in a single command. Note that when specifying multiple key+value pairs, they must be separated by TAB characters. All keys are made lowercase by the server. See the examples bellow.
          */
         SETSCRIPTTAGS: {
@@ -396,7 +396,7 @@ export interface SpringLobbyProtocol {
         PROMOTE: {
         }
     };
-    
+
     Response: {
         /** Sent as the response to a PING command. */
         PONG: {
@@ -408,9 +408,9 @@ export interface SpringLobbyProtocol {
         TASSERVER: {
             /** This is the lobby protocol version used by the server. The client may check if it supports this version before attempting to log in. */
             protocolVersion: string;
-            /** 
+            /**
              * Default spring version used on lobby server. Can be locally determinated by calling unitsyncs GetSpringVersion(), IsSpringReleaseVersion() and GetSpringVersionPatchset(), which will return the version, for example "95.0" or "94.1.1-1062-g9d16c2d develop".
-             * 
+             *
              * Note that if the value of this parameter is "*", the client should simply ignore it since this means that the server does not contain any updates nor does it require latest Spring version (this is usually the case when the server is running in LAN mode). */
             springVersion: string;
             /** This is server UDP port where the "NAT Help Server" is running. This is the port to which clients should send their UDP packets when trying to figure out their public UDP source port. This is used with some NAT traversal techniques (e.g. "hole punching"). */
@@ -422,11 +422,11 @@ export interface SpringLobbyProtocol {
         REGISTRATIONDENIED: {
             reason?: string;
         }
-        /** 
+        /**
          * Sent in response to a REGISTER command, if registration has been accepted.
-         * 
+         *
          * If email verification is enabled, sending of this command notifies that the server has sent a verification code to the users email address. This verification code is expected back from the client in CONFIRMAGREEMENT
-         * 
+         *
          * Upon reciept of this command, a lobby client would normally be expected to reply with a LOGIN attempt (but this is not a requirement of the protocol).
          */
         REGISTRATIONACCEPTED: {
@@ -466,7 +466,7 @@ export interface SpringLobbyProtocol {
             message: string;
         }
         /** Notifies that a verification code was sent, in response to CHANGEEMAILREQUEST.
-         * 
+         *
          * No response is required from the client, although a CHANGEEMAIL command would normally be sent once the user has supplied their verification code. */
         CHANGEEMAILREQUESTACCEPTED: {
 
@@ -560,7 +560,7 @@ export interface SpringLobbyProtocol {
         }
         /**
          * Sent to a client who just joined the channel. This command informs the client of the list of users present in the channel, including the client itself.
-         * 
+         *
          * This command is always sent (to a client joining a channel), and the list it conveys includes the newly joined client. It is sent after all the CLIENTSFROM commands. Once CLIENTS has been processed, the joining client has been informed of the full list of other clients and bridged clients currently present in the joined channel.
          */
         CLIENTS: {
@@ -617,7 +617,7 @@ export interface SpringLobbyProtocol {
         }
         /**
          * Sent by the server in response to a successful BRIDGECLIENTFROM command.
-         * 
+         *
          * The server will use 'externalUser:location' as the username for the bridged client.
          */
         BRIDGEDCLIENTFROM: {
@@ -683,23 +683,23 @@ export interface SpringLobbyProtocol {
             /** The name of the channel (which will contain no whitespace) in which the chat for this battle takes place. By convention, these channels have names of the form __battle__1234. */
             channel?: string;
         }
-        /** 
+        /**
          * Sent to a client who previously sent an OPENBATTLE command, if the client's request to open a new battle has been approved.
-         * 
+         *
          * Note that the corresponding BATTLEOPENED command is sent before this command is used to reflect the successful OPENBATTLE command back to the client.
-         * 
+         *
          * After sending this command, the server will send a JOINBATTLE (to notify the founding client that they have joined their own battle) followed by a REQUESTBATTLESTATUS.
         */
         OPENBATTLE: {
             battleId: number;
         }
-        /** 
+        /**
          * Notifies a client that their request to JOINBATTLE was successful, and that they have just joined the battle.
-         * 
+         *
          * Clients in the battle will be notified of the new user via JOINEDBATTLE.
-         * 
+         *
          * Next, the server will send a series of commands to the newly joined client, which might include DISABLEUNITS, ADDBOT, ADDSTARTRECT, SETSCRIPTTAGS and so on, along with multiple CLIENTBATTLESTATUS, in order to describe the current state of the battle to the joining client.
-         * 
+         *
          * If the battle has natType>0, the server will also send the clients IP port to the host, via the CLIENTIPPORT command. Someone who knows more about this should write more!
         */
         JOINBATTLE: {
@@ -716,9 +716,9 @@ export interface SpringLobbyProtocol {
         JOINBATTLEFAILED: {
             reason: string;
         }
-        /** 
+        /**
          * Sent by the server to all clients when a new client joins the battle.
-         * 
+         *
          * The server does not send this command for a host, when that host opens its own battle.
         */
         JOINEDBATTLE: {
@@ -736,9 +736,9 @@ export interface SpringLobbyProtocol {
         BATTLECLOSED: {
             battleId: number;
         }
-        /** 
+        /**
          * Sent as a response to a client's UDP packet (used with "hole punching" NAT traversal technique).
-         * 
+         *
          * Someone who knows more about this should document it!
          * */
         UDPSOURCEPORT: {
@@ -789,7 +789,7 @@ export interface SpringLobbyProtocol {
         }
         /**
          * Sent to a client that was kicked from their current battle by the battle founder.
-         * 
+         *
          * The client does not need to send LEAVEBATTLE, as removal has already been done by the server. The only purpose of this command is to notify the client that they were kicked. (The client will also recieve a corresponding LEFTBATTLE notification.)
          */
         FORCEQUITBATTLE: {

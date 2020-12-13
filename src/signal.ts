@@ -13,9 +13,9 @@ export class Signal<T = any> {
         }
     }
 
-    public dispose(bindingToDispose: SignalBinding){
+    public dispose(bindingToDispose: SignalBinding) {
         for (const binding of this.bindings) {
-            if (bindingToDispose === binding){
+            if (bindingToDispose === binding) {
                 bindingToDispose.destroy();
             }
         }
@@ -40,14 +40,14 @@ export class SignalBinding<T = any> {
     }
 
     public execute(data: T) {
-        if (this.listener){
+        if (this.listener) {
             this.listener(data);
         }
     }
 
     public destroy() {
         const index = this.signal.bindings.indexOf(this);
-        if (index !== -1){
+        if (index !== -1) {
             this.signal.bindings.splice(index, 1);
         }
         delete this.listener;
