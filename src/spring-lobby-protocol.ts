@@ -250,7 +250,7 @@ export interface SpringLobbyProtocol {
              * - b5 = access status (tells us whether this client is a server moderator or not) - client is not allowed to change this bit himself (only server may set them).
              * - b6 = bot mode (0 - normal user, 1 - automated bot). This bit is copied from user's account and can not be changed by the client himself. Bots differ from human players in that they are fully automated and that some anti-flood limitations do not apply to them.
              */
-            status: string;
+            status: PlayerStatus;
         }
         /**
          * Sent by a client to the server, telling him his battle status changed.
@@ -769,7 +769,7 @@ export interface SpringLobbyProtocol {
         CLIENTSTATUS: {
             userName: string;
             /** See the MYSTATUS command for possible values of this parameter. */
-            status: string;
+            status: PlayerStatus;
         }
         /** Sent by the server to users participating in a battle when one of the clients changes his battle status. */
         CLIENTBATTLESTATUS: {
@@ -897,6 +897,16 @@ export interface SpringLobbyProtocol {
         }
     }
 }
+
+export interface PlayerStatus {
+    ingame: boolean;
+    away: boolean;
+    rank: number;
+    moderator: boolean;
+    bot: boolean;
+}
+
+export type SLPTypes = string | number | boolean | string[] | PlayerStatus | undefined;
 
 // export enum ServerMode {
 //     NORMAL = 0,

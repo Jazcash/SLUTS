@@ -5,7 +5,7 @@ import * as os from "os";
 import { clearInterval, setInterval } from "timers";
 
 import { Signal } from "./signal";
-import { SpringLobbyProtocol } from "./spring-lobby-protocol";
+import { PlayerStatus, SLPTypes, SpringLobbyProtocol } from "./spring-lobby-protocol";
 import { SpringLobbyProtocol as SpringLobbyProtocolCompiled } from "./spring-lobby-protocol-compiled";
 
 type TIface = typeof SpringLobbyProtocolCompiled;
@@ -15,7 +15,7 @@ export type SLPResponseID = keyof SpringLobbyProtocol["Response"];
 export type SLPRequestMessage<ID extends SLPRequestID> = SpringLobbyProtocol["Request"][ID];
 export type SLPResponseMessage<ID extends SLPResponseID> = SpringLobbyProtocol["Response"][ID];
 export type RequestData<ID extends keyof SpringLobbyProtocol["Request"]> = keyof SpringLobbyProtocol["Request"][ID] extends never ? [] : [SpringLobbyProtocol["Request"][ID]];
-type MessageModel = { [key: string]: string | number | boolean | string[] | undefined; };
+type MessageModel = { [key: string]: SLPTypes };
 
 export interface SLPMessage {
     name: string;
@@ -24,7 +24,7 @@ export interface SLPMessage {
 
 export interface SLPProperty {
     name: string;
-    type: "string" | "number" | "boolean" | "stringArray";
+    type: "string" | "number" | "boolean" | "stringArray" | "PlayerStatus";
     optional: boolean;
 }
 
@@ -235,7 +235,7 @@ export class SpringLobbyProtocolClient {
             for (let i=0; i<props.length; i++) {
                 const prop = props[i];
                 const stringValue = parts[i]!;
-                let value: string | number | boolean | string[];
+                let value: SLPTypes;
 
                 if (prop.type === "number") {
                     value = Number(stringValue);
@@ -243,6 +243,8 @@ export class SpringLobbyProtocolClient {
                     value = stringValue === "1";
                 } else if (prop.type === "stringArray") {
                     value = stringValue!.split(" ");
+                } else if (prop.type === "PlayerStatus") {
+                    value = this.parsePlayerStatus(Number(stringValue));
                 } else {
                     value = stringValue;
                 }
@@ -295,8 +297,10 @@ export class SpringLobbyProtocolClient {
                     stringValue = value.toString();
                 } else if (typeof value === "boolean") {
                     stringValue = Number(value).toString();
-                } else if (typeof value === "object") {
-                    stringValue = value.join(" ");
+                } else if (value instanceof Array) {
+                    stringValue = (value as any[]).join(" ");
+                } else if (typeof value === "object" && this.isPlayerStatus(value)) {
+                    stringValue = this.composePlayerStatus(value).toString()
                 } else {
                     stringValue = value;
                 }
@@ -306,5 +310,23 @@ export class SpringLobbyProtocolClient {
 
             return requestString;
         };
+    }
+
+    protected parsePlayerStatus(integer: number) : PlayerStatus {
+        return {
+            ingame: (integer & 1) !== 0,
+            away: (integer & 2) !== 0,
+            rank: (integer & 0b00011100) >> 2,
+            moderator: (integer & 32) !== 0,
+            bot: (integer & 64) !== 0,
+        }
+    }
+
+    protected composePlayerStatus(status: PlayerStatus) : number {
+        return +status.ingame & 1 | +status.away & 2 | +status.rank << 2 | +status.moderator & 32 | +status.bot & 64;
+    }
+
+    protected isPlayerStatus(arg: any) : arg is PlayerStatus {
+        return arg.ingame !== undefined && arg.away !== undefined && arg.rank !== undefined && arg.moderator !== undefined && arg.bot !== undefined;
     }
 }
