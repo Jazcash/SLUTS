@@ -1,6 +1,6 @@
 {
   "name": "sluts",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Spring Lobby User for TypeScript",
   "engines": {
     "node": ">=0.12"
