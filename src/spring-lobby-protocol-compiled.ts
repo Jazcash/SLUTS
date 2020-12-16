@@ -405,7 +405,7 @@ export const SpringLobbyProtocol = t.iface([], {
       "founder": "string",
       "ip": "string",
       "port": "number",
-      "maxPlayers": "string",
+      "maxPlayers": "number",
       "passworded": "boolean",
       "rank": "number",
       "mapHash": "number",
@@ -560,8 +560,11 @@ export const PlayerStatus = t.iface([], {
   "bot": "boolean",
 });
 
+export const SLPTypes = t.union("string", "number", "boolean", t.array("string"), "PlayerStatus", "undefined");
+
 const exportedTypeSuite: t.ITypeSuite = {
   SpringLobbyProtocol,
   PlayerStatus,
+  SLPTypes,
 };
 export default exportedTypeSuite;

@@ -671,7 +671,7 @@ export interface SpringLobbyProtocol {
             founder: string;
             ip: string;
             port: number;
-            maxPlayers: string;
+            maxPlayers: number;
             passworded: boolean;
             rank: number;
             mapHash: number;
