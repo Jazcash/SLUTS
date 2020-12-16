@@ -3,9 +3,8 @@ import * as dns from "dns";
 import * as net from "net";
 import * as os from "os";
 import { clearInterval, setInterval } from "timers";
-
 import { Signal } from "./signal";
-import { PlayerStatus, SLPTypes, SpringLobbyProtocol } from "./spring-lobby-protocol";
+import { PlayerStatus as MyPlayerStatus, SLPTypes, SpringLobbyProtocol } from "./spring-lobby-protocol";
 import { SpringLobbyProtocol as SpringLobbyProtocolCompiled } from "./spring-lobby-protocol-compiled";
 
 type TIface = typeof SpringLobbyProtocolCompiled;
@@ -16,6 +15,8 @@ export type SLPRequestMessage<ID extends SLPRequestID> = SpringLobbyProtocol["Re
 export type SLPResponseMessage<ID extends SLPResponseID> = SpringLobbyProtocol["Response"][ID];
 export type RequestData<ID extends keyof SpringLobbyProtocol["Request"]> = keyof SpringLobbyProtocol["Request"][ID] extends never ? [] : [SpringLobbyProtocol["Request"][ID]];
 type MessageModel = { [key: string]: SLPTypes };
+
+export interface PlayerStatus extends MyPlayerStatus{};
 
 export interface SLPMessage {
     name: string;
