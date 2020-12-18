@@ -8,5 +8,10 @@
         "moduleResolution": "node",
         "skipLibCheck": true,
         "baseUrl": "./src"
-    }
+    },
+    "exclude": [
+        "node_modules",
+        "working-files",
+        "dist"
+    ]
 }
