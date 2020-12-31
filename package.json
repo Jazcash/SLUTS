@@ -1,6 +1,6 @@
 {
   "name": "sluts",
-  "version": "1.5.1",
+  "version": "2.0.0",
   "description": "Spring Lobby User for TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
