@@ -3,7 +3,7 @@ import * as dns from "dns";
 import * as net from "net";
 import * as os from "os";
 import { clearInterval, setInterval } from "timers";
-import { Signal } from "./signal";
+import { Signal, SignalBinding } from "jaz-signals";
 import { PlayerStatus as MyPlayerStatus, SLPTypes, SpringLobbyProtocol } from "./spring-lobby-protocol";
 import { SpringLobbyProtocol as SpringLobbyProtocolCompiled } from "./spring-lobby-protocol-compiled";
 
@@ -29,15 +29,33 @@ export interface SLPProperty {
     optional: boolean;
 }
 
-interface SpringLobbyProtocolClientConfig {
+export interface SpringLobbyProtocolClientConfig {
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+    /** Name of this lobby client
+     * @default "SLUTS" */
+    lobbySignature?: string;
     /** Log all incoming and outgoing messages
      * @default false */
     verbose?: boolean;
+    /** If true, will attempt to reconnect after being disconnected for whatever reason
+     * @default true */
+    stayConnected?: boolean;
 }
 
+const defaultConfig: Partial<SpringLobbyProtocolClientConfig> = {
+    lobbySignature: "SLUTS",
+    verbose: false,
+    stayConnected: true
+};
 export class SpringLobbyProtocolClient {
+    public onLogin: Signal = new Signal();
+    public onDisconnect: Signal = new Signal();
+
     protected config: SpringLobbyProtocolClientConfig;
-    protected socket: net.Socket = new net.Socket();
+    protected socket!: net.Socket;
     protected responseSignals: Map<SLPResponseID, Signal<any>> = new Map();
     protected requestInterfaces: SLPMessage[] = [];
     protected responseInterfaces: SLPMessage[] = [];
@@ -45,9 +63,10 @@ export class SpringLobbyProtocolClient {
     protected responseParsers: { [key in keyof SpringLobbyProtocol["Response"]]?: (response: string) => any } = {};
     protected keepAliveInterval?: NodeJS.Timeout;
     protected responseBuffer: string = "";
+    protected onConnectBinding?: SignalBinding<any>;
 
-    constructor(config: SpringLobbyProtocolClientConfig = { verbose: false }) {
-        this.config = config;
+    constructor(config?: SpringLobbyProtocolClientConfig) {
+        this.config = Object.assign({}, defaultConfig, config);
 
         this.requestInterfaces = this.generateMessageInterfaces((SpringLobbyProtocolCompiled.props[0].ttype as TIface));
         this.responseInterfaces = this.generateMessageInterfaces((SpringLobbyProtocolCompiled.props[1].ttype as TIface));
@@ -61,14 +80,13 @@ export class SpringLobbyProtocolClient {
         }
     }
 
-    public async connect(host: string, port: number) : Promise<SpringLobbyProtocol["Response"]["TASSERVER"]> {
+    public async connect() : Promise<SpringLobbyProtocol["Response"]["TASSERVER"] | void> {
         return new Promise(resolve => {
+            this.socket = new net.Socket();
+
             this.socket.on("data", (data) => this.responseReceived(data.toString("utf8")));
 
-            const onConnectBinding = this.onResponse("TASSERVER").add(data => {
-                if (this.keepAliveInterval) {
-                    clearInterval(this.keepAliveInterval);
-                }
+            this.onConnectBinding = this.onResponse("TASSERVER").add(data => {
                 this.keepAliveInterval = setInterval(() => {
                     this.request("PING");
                 }, 30000);
@@ -76,30 +94,62 @@ export class SpringLobbyProtocolClient {
                 resolve(data);
             });
 
-            for (const event of ["end", "timeout", "error"]) {
-                this.socket.on(event, () => {
-                    if (this.keepAliveInterval) {
-                        clearInterval(this.keepAliveInterval);
-                    }
-                    onConnectBinding.destroy();
-                });
-            }
+            this.socket.connect(this.config.port, this.config.host, async () => {
+                console.log(`Connected to ${this.config.host}:${this.config.port}`);
+                console.log("Attempting login...");
 
-            this.socket.connect(port, host, () => {
-                if (this.config.verbose) {
-                    console.log(`Connected to ${host}:${port}`);
+                const { success } = await this.login();
+                if (!success && this.config.stayConnected) {
+                    this.attemptReconnect();
+                } else {
+                    this.onLogin.dispatch();
                 }
             });
+
+            for (const event of ["end", "timeout", "error", "close"]) {
+                this.socket.on(event, async () => {
+                    console.log(`Disconnected (${event})`);
+
+                    this.onDisconnect.dispatch();
+
+                    this.cleanupSocket();
+
+                    if (this.config.stayConnected){
+                        this.attemptReconnect();
+                    }
+                });
+            }
         });
+    }
+
+    protected cleanupSocket() {
+        if (this.keepAliveInterval) {
+            clearInterval(this.keepAliveInterval);
+        }
+        if (this.onConnectBinding) {
+            this.onConnectBinding.destroy();
+        }
+        this.socket.removeAllListeners();
+        this.socket.destroy();
+    }
+
+    protected async attemptReconnect() {
+        this.cleanupSocket();
+
+        console.log(`Attempting reconnect in 10s...`);
+
+        await this.delay(10000);
+
+        console.log(`Reconnecting...`);
+
+        this.connect();
     }
 
     public disconnect(reason: string = "Intentionally disconnected") : Promise<void> {
         return new Promise(resolve => {
             this.request("EXIT", { reason: reason });
 
-            if (this.config.verbose) {
-                console.log(`Disconnected from ${this.socket.remoteAddress}:${this.socket.remotePort}`);
-            }
+            console.log(`Disconnected from ${this.socket.remoteAddress}:${this.socket.remotePort}`);
 
             this.socket.end(() => resolve());
         });
@@ -129,8 +179,8 @@ export class SpringLobbyProtocolClient {
         return this.responseSignals.get(responseId) as Signal<Data>;
     }
 
-    public async login(username: string, password: string, clientName = "SLP Client") : Promise<{ success: boolean, error?: string }> {
-        const localIp = await (await dns.promises.lookup(os.hostname())).address ?? "*";
+    public async login() : Promise<{ success: boolean, error?: string }> {
+        const localIp = (await dns.promises.lookup(os.hostname())).address ?? "*";
 
         return new Promise(resolve => {
             const acceptedBinding = this.onResponse("ACCEPTED").add(() => {
@@ -146,11 +196,11 @@ export class SpringLobbyProtocolClient {
             });
 
             this.request("LOGIN", {
-                userName: username,
-                password: crypto.createHash("md5").update(password).digest("base64"),
+                userName: this.config.username,
+                password: crypto.createHash("md5").update(this.config.password).digest("base64"),
                 cpu: 0,
                 localIP: localIp,
-                lobbyNameAndVersion: clientName
+                lobbyNameAndVersion: this.config.lobbySignature!
             });
         });
     }
@@ -329,5 +379,11 @@ export class SpringLobbyProtocolClient {
 
     protected isPlayerStatus(arg: any) : arg is PlayerStatus {
         return arg.ingame !== undefined && arg.away !== undefined && arg.rank !== undefined && arg.moderator !== undefined && arg.bot !== undefined;
+    }
+
+    protected delay(ms: number) : Promise<void> {
+        return new Promise(resolve => {
+            setTimeout(() => resolve(), ms);
+        });
     }
 }

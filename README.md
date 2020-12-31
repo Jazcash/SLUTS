@@ -9,20 +9,20 @@ Spring Lobby User in TypeScript
 import { SpringLobbyProtocolClient } from "sluts";
 
 (async () => {
-    const client = new SpringLobbyProtocolClient({ verbose: false });
-
-    const serverInfo = await client.connect("road-flag.bnr.la", 8200);
-
-    const loginResponse = await client.login("MyBotUsername", "mybotpassword");
-    if (!loginResponse.success) {
-        console.log(loginResponse.error);
-        return;
-    }
+    const client = new SpringLobbyProtocolClient({
+        host: "road-flag.bnr.la",
+        port: 8200,
+        username: "MyBot",
+        password: "greatpassword",
+        verbose: true
+    });
 
     client.onResponse("SAIDPRIVATE").add(({username, message}) => {
         if (message.substr(0, 5) === "!say ") {
             client.request("SAYPRIVATE", { userName: username, message: message.slice(5) });
         }
     });
+
+    await client.connect();
 })();
 ```
