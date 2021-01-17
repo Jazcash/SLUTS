@@ -95,8 +95,10 @@ export class SpringLobbyProtocolClient {
             });
 
             this.socket.connect(this.config.port, this.config.host, async () => {
-                console.log(`Connected to ${this.config.host}:${this.config.port}`);
-                console.log("Attempting login...");
+                if (this.config.verbose) {
+                    console.log(`Connected to ${this.config.host}:${this.config.port}`);
+                    console.log("Attempting login...");
+                }
 
                 const { success } = await this.login();
                 if (!success && this.config.stayConnected) {
@@ -108,7 +110,9 @@ export class SpringLobbyProtocolClient {
 
             for (const event of ["end", "timeout", "error", "close"]) {
                 this.socket.on(event, async () => {
-                    console.log(`Disconnected (${event})`);
+                    if (this.config.verbose) {
+                        console.log(`Disconnected (${event})`);
+                    }
 
                     this.onDisconnect.dispatch();
 
@@ -136,11 +140,15 @@ export class SpringLobbyProtocolClient {
     protected async attemptReconnect() {
         this.cleanupSocket();
 
-        console.log(`Attempting reconnect in 10s...`);
+        if (this.config.verbose) {
+            console.log(`Attempting reconnect in 10s...`);
+        }
 
         await this.delay(10000);
 
-        console.log(`Reconnecting...`);
+        if (this.config.verbose) {
+            console.log(`Reconnecting...`);
+        }
 
         this.connect();
     }
@@ -149,7 +157,9 @@ export class SpringLobbyProtocolClient {
         return new Promise(resolve => {
             this.request("EXIT", { reason: reason });
 
-            console.log(`Disconnected from ${this.socket.remoteAddress}:${this.socket.remotePort}`);
+            if (this.config.verbose) {
+                console.log(`Disconnected from ${this.socket.remoteAddress}:${this.socket.remotePort}`);
+            }
 
             this.socket.end(() => resolve());
         });

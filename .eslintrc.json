@@ -23,6 +23,7 @@
         "block-spacing": "error",
         "no-trailing-spaces": "error",
         "space-before-blocks": "error",
-        "indent": ["error", 4]
+        "indent": ["error", 4],
+        "no-console": "error"
     }
 }

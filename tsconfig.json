@@ -6,8 +6,7 @@
         "strict": true,
         "module": "CommonJS",
         "moduleResolution": "node",
-        "skipLibCheck": true,
-        "baseUrl": "./src"
+        "skipLibCheck": true
     },
     "exclude": [
         "node_modules",
