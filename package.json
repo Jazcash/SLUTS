@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "jaz-signals": "^0.3.0",
+    "jaz-ts-utils": "^0.3.0",
     "ts-interface-checker": "^0.1.13"
   }
 }

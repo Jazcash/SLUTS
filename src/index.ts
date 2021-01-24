@@ -6,6 +6,7 @@ import { clearInterval, setInterval } from "timers";
 import { Signal, SignalBinding } from "jaz-signals";
 import { PlayerStatus as MyPlayerStatus, SLPTypes, SpringLobbyProtocol } from "./spring-lobby-protocol";
 import { SpringLobbyProtocol as SpringLobbyProtocolCompiled } from "./spring-lobby-protocol-compiled";
+import { Optionals } from "jaz-ts-utils";
 
 type TIface = typeof SpringLobbyProtocolCompiled;
 
@@ -39,22 +40,24 @@ export interface SpringLobbyProtocolClientConfig {
     lobbySignature?: string;
     /** Log all incoming and outgoing messages
      * @default false */
-    verbose?: boolean;
     /** If true, will attempt to reconnect after being disconnected for whatever reason
      * @default true */
     stayConnected?: boolean;
+    verbose?: boolean;
+    logger?: (...data: any[]) => any;
 }
 
-const defaultConfig: Partial<SpringLobbyProtocolClientConfig> = {
+const defaultConfig: Optionals<SpringLobbyProtocolClientConfig> = {
     lobbySignature: "SLUTS",
     verbose: false,
-    stayConnected: true
+    stayConnected: true,
+    logger: console.log
 };
 export class SpringLobbyProtocolClient {
     public onLogin: Signal = new Signal();
     public onDisconnect: Signal = new Signal();
 
-    protected config: SpringLobbyProtocolClientConfig;
+    protected config: Required<SpringLobbyProtocolClientConfig>;
     protected socket!: net.Socket;
     protected responseSignals: Map<SLPResponseID, Signal<any>> = new Map();
     protected requestInterfaces: SLPMessage[] = [];
@@ -65,8 +68,8 @@ export class SpringLobbyProtocolClient {
     protected responseBuffer: string = "";
     protected onConnectBinding?: SignalBinding<any>;
 
-    constructor(config?: SpringLobbyProtocolClientConfig) {
-        this.config = Object.assign({}, defaultConfig, config);
+    constructor(config: SpringLobbyProtocolClientConfig) {
+        this.config = Object.assign({}, defaultConfig, config) as Required<SpringLobbyProtocolClientConfig>;
 
         this.requestInterfaces = this.generateMessageInterfaces((SpringLobbyProtocolCompiled.props[0].ttype as TIface));
         this.responseInterfaces = this.generateMessageInterfaces((SpringLobbyProtocolCompiled.props[1].ttype as TIface));
@@ -96,8 +99,8 @@ export class SpringLobbyProtocolClient {
 
             this.socket.connect(this.config.port, this.config.host, async () => {
                 if (this.config.verbose) {
-                    console.log(`Connected to ${this.config.host}:${this.config.port}`);
-                    console.log("Attempting login...");
+                    this.config.logger(`Connected to ${this.config.host}:${this.config.port}`);
+                    this.config.logger("Attempting login...");
                 }
 
                 const { success } = await this.login();
@@ -111,7 +114,7 @@ export class SpringLobbyProtocolClient {
             for (const event of ["end", "timeout", "error", "close"]) {
                 this.socket.on(event, async () => {
                     if (this.config.verbose) {
-                        console.log(`Disconnected (${event})`);
+                        this.config.logger(`Disconnected (${event})`);
                     }
 
                     this.onDisconnect.dispatch();
@@ -141,13 +144,13 @@ export class SpringLobbyProtocolClient {
         this.cleanupSocket();
 
         if (this.config.verbose) {
-            console.log(`Attempting reconnect in 10s...`);
+            this.config.logger(`Attempting reconnect in 10s...`);
         }
 
         await this.delay(10000);
 
         if (this.config.verbose) {
-            console.log(`Reconnecting...`);
+            this.config.logger(`Reconnecting...`);
         }
 
         this.connect();
@@ -158,7 +161,7 @@ export class SpringLobbyProtocolClient {
             this.request("EXIT", { reason: reason });
 
             if (this.config.verbose) {
-                console.log(`Disconnected from ${this.socket.remoteAddress}:${this.socket.remotePort}`);
+                this.config.logger(`Disconnected from ${this.socket.remoteAddress}:${this.socket.remotePort}`);
             }
 
             this.socket.end(() => resolve());
@@ -171,7 +174,7 @@ export class SpringLobbyProtocolClient {
             const requestString = data.length ? requestComposer(data[0] as MessageModel) : requestId;
 
             if (this.config.verbose) {
-                console.log(`Request: ${requestString}`);
+                this.config.logger(`Request: ${requestString}`);
             }
 
             this.socket.write(requestString + "\r\n", "utf8");
@@ -242,7 +245,7 @@ export class SpringLobbyProtocolClient {
         this.responseBuffer = "";
         for (const responseMessage of responseMessages) {
             if (this.config.verbose) {
-                console.log(`Response: ${responseMessage}`);
+                this.config.logger(`Response: ${responseMessage}`);
             }
 
             const index = responseMessage.indexOf(" ");
