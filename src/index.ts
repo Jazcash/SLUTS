@@ -3,10 +3,9 @@ import * as dns from "dns";
 import * as net from "net";
 import * as os from "os";
 import { clearInterval, setInterval } from "timers";
-import { Signal, SignalBinding } from "jaz-signals";
+import { Signal, SignalBinding, Optionals } from "jaz-ts-utils";
 import { PlayerStatus as MyPlayerStatus, SLPTypes, SpringLobbyProtocol } from "./spring-lobby-protocol";
 import { SpringLobbyProtocol as SpringLobbyProtocolCompiled } from "./spring-lobby-protocol-compiled";
-import { Optionals } from "jaz-ts-utils";
 
 type TIface = typeof SpringLobbyProtocolCompiled;
 
