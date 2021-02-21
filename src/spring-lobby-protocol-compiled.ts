@@ -290,9 +290,8 @@ export const SpringLobbyProtocol = t.iface([], {
     "ADDUSER": t.iface([], {
       "userName": "string",
       "country": "string",
-      "cpu": t.lit(0),
       "userId": "number",
-      "lobbyId": "number",
+      "lobbyId": "string",
     }),
     "REMOVEUSER": t.iface([], {
       "userName": "string",

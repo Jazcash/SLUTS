@@ -511,11 +511,9 @@ export interface SpringLobbyProtocol {
             userName: string;
             /** A two-character country code based on ISO 3166 standard. See http://www.iso.org/iso/en/prods-services/iso3166ma/index.html */
             country: string;
-            /** @deprecated see the LOGIN command. */
-            cpu: 0;
             userId: number;
             /** A string of text sent by the client, typically identifying the lobby client they are using. */
-            lobbyId: number;
+            lobbyId: string;
         }
         /** Indicates that a user disconnected from the server. The client should remove this user from his clients list, which he must maintain while he is connected to the server. */
         REMOVEUSER: {
