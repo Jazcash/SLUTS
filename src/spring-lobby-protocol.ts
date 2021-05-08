@@ -52,7 +52,7 @@ export interface SpringLobbyProtocol {
         }
         /** Confirm that the user agreed to the user agreement, and supply an email verification code (if necessary). */
         CONFIRMAGREEMENT: {
-            verificationCode: string;
+            verificationCode?: string;
         }
         /** Will rename the current account name to newUsername. The user has to be logged in for this to work. After the server renames the account, it will disconnect the client. */
         RENAMEACCOUNT: {

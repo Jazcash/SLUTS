@@ -55,9 +55,9 @@ const defaultConfig: Optionals<SpringLobbyProtocolClientConfig> = {
 export class SpringLobbyProtocolClient {
     public onLogin: Signal = new Signal();
     public onDisconnect: Signal = new Signal();
+    public socket!: net.Socket;
 
     protected config: Required<SpringLobbyProtocolClientConfig>;
-    protected socket!: net.Socket;
     protected responseSignals: Map<SLPResponseID, Signal<any>> = new Map();
     protected requestInterfaces: SLPMessage[] = [];
     protected responseInterfaces: SLPMessage[] = [];
@@ -82,7 +82,7 @@ export class SpringLobbyProtocolClient {
         }
     }
 
-    public async connect() : Promise<SpringLobbyProtocol["Response"]["TASSERVER"] | void> {
+    public async connect(autoLogin: boolean = true) : Promise<SpringLobbyProtocol["Response"]["TASSERVER"] | void> {
         return new Promise(resolve => {
             this.socket = new net.Socket();
 
@@ -99,14 +99,18 @@ export class SpringLobbyProtocolClient {
             this.socket.connect(this.config.port, this.config.host, async () => {
                 if (this.config.verbose) {
                     this.config.logger(`Connected to ${this.config.host}:${this.config.port}`);
-                    this.config.logger("Attempting login...");
+                    if (autoLogin) {
+                        this.config.logger("Attempting login...");
+                    }
                 }
 
-                const { success } = await this.login();
-                if (!success && this.config.stayConnected) {
-                    this.attemptReconnect();
-                } else {
-                    this.onLogin.dispatch();
+                if (autoLogin) {
+                    const { success } = await this.login();
+                    if (!success && this.config.stayConnected) {
+                        this.attemptReconnect();
+                    } else {
+                        this.onLogin.dispatch();
+                    }
                 }
             });
 
@@ -155,15 +159,21 @@ export class SpringLobbyProtocolClient {
         this.connect();
     }
 
-    public disconnect(reason: string = "Intentionally disconnected") : Promise<void> {
+    public disconnect(graceful = false, reason: string = "Intentionally disconnected") : Promise<void> {
         return new Promise(resolve => {
-            this.request("EXIT", { reason: reason });
+            if (graceful) {
+                this.request("EXIT", { reason: reason });
+            }
 
             if (this.config.verbose) {
                 this.config.logger(`Disconnected from ${this.socket.remoteAddress}:${this.socket.remotePort}`);
             }
 
-            this.socket.end(() => resolve());
+            if (this.socket) {
+                this.socket.end(() => resolve());
+            } else {
+                resolve();
+            }
         });
     }
 
