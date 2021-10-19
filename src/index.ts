@@ -6,6 +6,8 @@ import { clearInterval, setInterval } from "timers";
 import { Signal, SignalBinding, Optionals } from "jaz-ts-utils";
 import { PlayerStatus as MyPlayerStatus, SLPTypes, SpringLobbyProtocol } from "./spring-lobby-protocol";
 import { SpringLobbyProtocol as SpringLobbyProtocolCompiled } from "./spring-lobby-protocol-compiled";
+import getmac from "getmac";
+const crc32 = require("crc32");
 
 type TIface = typeof SpringLobbyProtocolCompiled;
 
@@ -47,7 +49,7 @@ export interface SpringLobbyProtocolClientConfig {
 }
 
 const defaultConfig: Optionals<SpringLobbyProtocolClientConfig> = {
-    lobbySignature: "SLUTS",
+    lobbySignature: "SLTS Client",
     verbose: false,
     stayConnected: true,
     logger: console.log
@@ -217,12 +219,16 @@ export class SpringLobbyProtocolClient {
                 resolve({ success: false, error: data.reason });
             });
 
+            const macaddress = getmac();
+            const userId = crc32(macaddress);
+
             this.request("LOGIN", {
                 userName: this.config.username,
                 password: crypto.createHash("md5").update(this.config.password).digest("base64"),
                 cpu: 0,
                 localIP: localIp,
-                lobbyNameAndVersion: this.config.lobbySignature!
+                lobbyNameAndVersion: this.config.lobbySignature!,
+                userID: userId,
             });
         });
     }
@@ -260,9 +266,15 @@ export class SpringLobbyProtocolClient {
             const index = responseMessage.indexOf(" ");
             const [command, args] = [responseMessage.slice(0, index), responseMessage.slice(index + 1)];
 
+            const data = this.parseResponse(responseMessage);
+
+            const anySignal = this.responseSignals.get("ANY");
+            if (anySignal) {
+                anySignal.dispatch(data);
+            }
+
             const signal = this.responseSignals.get(command as SLPResponseID);
             if (signal) {
-                const data = this.parseResponse(responseMessage);
                 signal.dispatch(data);
             }
         }
@@ -270,14 +282,17 @@ export class SpringLobbyProtocolClient {
 
     protected parseResponse<ResponseID extends SLPResponseID | undefined, ResponseType = ResponseID extends SLPResponseID ? SLPResponseMessage<ResponseID> : any>(response: string, responseType?: ResponseID) : ResponseType | never {
         const index = response.indexOf(" ");
-        const [command, args] = [response.slice(0, index), response.slice(index + 1)];
+        let [command, args] = [response.slice(0, index), response.slice(index + 1)];
+        if (index === -1) {
+            command = response;
+        }
         const parser = this.responseParsers[command as keyof SpringLobbyProtocol["Response"]];
         if (parser) {
             const obj = parser(args);
             return obj as ResponseType;
         }
 
-        throw Error(`Response parser error: ${response}`);
+        throw Error(`Response parser error for: '${response}'`);
     }
 
     protected generateResponseParser(messageInterface: SLPMessage): (response: string) => object {

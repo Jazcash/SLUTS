@@ -28,7 +28,7 @@ export const SpringLobbyProtocol = t.iface([], {
       "compFlags": t.opt(t.array("string")),
     }),
     "CONFIRMAGREEMENT": t.iface([], {
-      "verificationCode": "string",
+      "verificationCode": t.opt("string"),
     }),
     "RENAMEACCOUNT": t.iface([], {
       "newUsername": "string",
