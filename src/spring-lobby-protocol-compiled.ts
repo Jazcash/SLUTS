@@ -24,7 +24,7 @@ export const SpringLobbyProtocol = t.iface([], {
       "cpu": t.lit(0),
       "localIP": "string",
       "lobbyNameAndVersion": "string",
-      "userID": t.opt("number"),
+      "userID": "number",
       "compFlags": t.opt(t.array("string")),
     }),
     "CONFIRMAGREEMENT": t.iface([], {
@@ -231,6 +231,7 @@ export const SpringLobbyProtocol = t.iface([], {
     }),
   }),
   "Response": t.iface([], {
+    "ANY": "any",
     "PONG": t.iface([], {
     }),
     "OK": t.iface([], {
