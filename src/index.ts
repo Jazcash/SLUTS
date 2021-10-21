@@ -355,7 +355,7 @@ export class SpringLobbyProtocolClient {
         const messages: SLPMessage[] = [];
 
         for (const messageType of messageModel.props) {
-            const propertyTypes = (messageType.ttype as TIface).props;
+            const propertyTypes = (messageType.ttype as TIface).props || [];
             const propertyModel: SLPProperty[] = [];
             for (const propertyType of propertyTypes) {
                 propertyModel.push({
