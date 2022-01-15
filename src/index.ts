@@ -1,12 +1,13 @@
 import * as crypto from "crypto";
 import * as dns from "dns";
+import getmac from "getmac";
+import { Optionals, Signal, SignalBinding } from "jaz-ts-utils";
 import * as net from "net";
 import * as os from "os";
 import { clearInterval, setInterval } from "timers";
-import { Signal, SignalBinding, Optionals } from "jaz-ts-utils";
+
 import { PlayerStatus as MyPlayerStatus, SLPTypes, SpringLobbyProtocol } from "./spring-lobby-protocol";
 import { SpringLobbyProtocol as SpringLobbyProtocolCompiled } from "./spring-lobby-protocol-compiled";
-import getmac from "getmac";
 const crc32 = require("crc32");
 
 type TIface = typeof SpringLobbyProtocolCompiled;
@@ -126,7 +127,7 @@ export class SpringLobbyProtocolClient {
 
                     this.cleanupSocket();
 
-                    if (this.config.stayConnected){
+                    if (this.config.stayConnected) {
                         this.attemptReconnect();
                     }
                 });
@@ -149,13 +150,13 @@ export class SpringLobbyProtocolClient {
         this.cleanupSocket();
 
         if (this.config.verbose) {
-            this.config.logger(`Attempting reconnect in 10s...`);
+            this.config.logger("Attempting reconnect in 10s...");
         }
 
         await this.delay(10000);
 
         if (this.config.verbose) {
-            this.config.logger(`Reconnecting...`);
+            this.config.logger("Reconnecting...");
         }
 
         this.connect();
@@ -292,7 +293,7 @@ export class SpringLobbyProtocolClient {
             return obj as ResponseType;
         }
 
-        throw Error(`Response parser error for: '${response}'`);
+        this.config.logger(`Unhandled response parser for: '${response}'`);
     }
 
     protected generateResponseParser(messageInterface: SLPMessage): (response: string) => object {
@@ -388,7 +389,7 @@ export class SpringLobbyProtocolClient {
                 } else if (value instanceof Array) {
                     stringValue = (value as any[]).join(" ");
                 } else if (typeof value === "object" && this.isPlayerStatus(value)) {
-                    stringValue = this.composePlayerStatus(value).toString()
+                    stringValue = this.composePlayerStatus(value).toString();
                 } else {
                     stringValue = value;
                 }
@@ -407,7 +408,7 @@ export class SpringLobbyProtocolClient {
             rank: (integer & 0b00011100) >> 2,
             moderator: (integer & 32) !== 0,
             bot: (integer & 64) !== 0,
-        }
+        };
     }
 
     protected composePlayerStatus(status: PlayerStatus) : number {
