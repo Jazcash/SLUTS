@@ -281,7 +281,7 @@ export class SpringLobbyProtocolClient {
         }
     }
 
-    protected parseResponse<ResponseID extends SLPResponseID | undefined, ResponseType = ResponseID extends SLPResponseID ? SLPResponseMessage<ResponseID> : any>(response: string, responseType?: ResponseID) : ResponseType | never {
+    protected parseResponse<ResponseID extends SLPResponseID | undefined, ResponseType = ResponseID extends SLPResponseID ? SLPResponseMessage<ResponseID> : any>(response: string, responseType?: ResponseID) : ResponseType | null {
         const index = response.indexOf(" ");
         let [command, args] = [response.slice(0, index), response.slice(index + 1)];
         if (index === -1) {
@@ -294,6 +294,8 @@ export class SpringLobbyProtocolClient {
         }
 
         this.config.logger(`Unhandled response parser for: '${response}'`);
+
+        return null;
     }
 
     protected generateResponseParser(messageInterface: SLPMessage): (response: string) => object {
