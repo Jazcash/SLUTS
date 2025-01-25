@@ -265,8 +265,7 @@ export class SpringLobbyProtocolClient {
             }
 
             const index = responseMessage.indexOf(" ");
-            const [command, args] = [responseMessage.slice(0, index), responseMessage.slice(index + 1)];
-
+            const command = index > 0 ? responseMessage.slice(0, index) : responseMessage;
             const data = this.parseResponse(responseMessage);
 
             const anySignal = this.responseSignals.get("ANY");
