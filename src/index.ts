@@ -8,6 +8,7 @@ import { clearInterval, setInterval } from "timers";
 
 import { PlayerStatus as MyPlayerStatus, SLPTypes, SpringLobbyProtocol } from "./spring-lobby-protocol";
 import { SpringLobbyProtocol as SpringLobbyProtocolCompiled } from "./spring-lobby-protocol-compiled";
+import { requestNumWords } from "./spring-lobby-protocol-num-words";
 const crc32 = require("crc32");
 
 type TIface = typeof SpringLobbyProtocolCompiled;
@@ -265,8 +266,7 @@ export class SpringLobbyProtocolClient {
             }
 
             const index = responseMessage.indexOf(" ");
-            const [command, args] = [responseMessage.slice(0, index), responseMessage.slice(index + 1)];
-
+            const command = index > 0 ? responseMessage.slice(0, index) : responseMessage;
             const data = this.parseResponse(responseMessage);
 
             const anySignal = this.responseSignals.get("ANY");
@@ -378,6 +378,7 @@ export class SpringLobbyProtocolClient {
 
     protected generateRequestComposer(requestModel: SLPMessage) : (request: MessageModel) => string {
         return (request) => {
+            let wordsLeft = requestNumWords[requestModel.name as keyof SpringLobbyProtocol["Request"]];
             let requestString = requestModel.name;
             for (const prop of requestModel.properties) {
                 const value = request[prop.name];
@@ -396,7 +397,7 @@ export class SpringLobbyProtocolClient {
                     stringValue = value;
                 }
 
-                requestString += " " + stringValue;
+                requestString += (wordsLeft-- >= 0 ? " " : "\t") + stringValue;
             }
 
             return requestString;
